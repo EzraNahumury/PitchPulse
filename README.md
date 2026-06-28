@@ -70,6 +70,31 @@ Why this is a natural fit for TxLINE specifically:
 
 ---
 
+## What Makes This Genuinely Different (Competitive Audit)
+
+We are honest about the landscape: **a "momentum bar" by itself is not new.**
+FotMob has *Momentum* (xG-based), Sofascore has *Attack Momentum* (event-pressure
+based), ESPN/Gracenote show *win probability*. A judge who follows football apps
+will have seen these. So our edge is **not** "we drew a momentum graph." It is
+four things those products structurally cannot or do not do:
+
+| | FotMob / Sofascore / ESPN | **PitchPulse** |
+|---|---|---|
+| **Signal source** | Their own xG / event-pressure model | **Live consensus betting-market probability** — widely regarded as the *sharpest* probability estimate in sports — sourced from TxLINE's aggregated "StablePrice Odds" (`Pct`) |
+| **Who shows market probability to casual fans** | Nobody — it is gambling-coded and locked inside sportsbooks | **We liberate it** and reframe it as a safe, non-betting *momentum / sentiment* signal |
+| **Core unit** | A live bar widget buried in a stats app | **Momentum Impact Score** — every moment *scored* by how much it moved the world's belief (Win-Probability-Added for football) |
+| **Product category** | Stats panel for hardcore fans | Standalone, AI-narrated **co-pilot for casual fans** + a shareable social artifact |
+| **Output** | A number on screen | A **narrated story** + a *Story of the Match* card + a tournament-wide *Biggest Swings* leaderboard across all 104 games |
+
+**The defensible, ownable idea:** PitchPulse is the first fan product that
+**scores every World Cup moment by how much it moved the market's belief** — and
+the only one that does it on the sharpest signal in sports, with the betting
+stripped out. That sentence is not Sofascore. The market-probability stream is
+data only TxLINE exposes, so this experience is *native to TxLINE* and hard to
+clone on a generic livescore feed.
+
+---
+
 ## Why This Can Win
 
 Mapped directly to the official judging criteria:
@@ -78,7 +103,7 @@ Mapped directly to the official judging criteria:
 |---|---|
 | **Fan Accessibility & UX** | One screen, one big animated ribbon, one sentence of narration at a time. A non-technical fan understands "Brazil's momentum just jumped" instantly — no odds, no jargon, no setup. |
 | **Real-Time Responsiveness** | Subscribes to **two** live SSE streams (`/api/scores/stream` + `/api/odds/stream`). The ribbon physically swings the instant odds move; events pop onto the timeline as they happen. Most submissions will use only the score stream — the odds stream is our visible, animated differentiator. |
-| **Originality & Value Creation** | Nobody has shipped a *win-probability momentum story for casual fans*. We convert a gambling-only signal into a safe, emotional, mainstream fan experience. It is a new interaction model, not a repackaged feed. |
+| **Originality & Value Creation** | We score every moment by **Win-Probability-Added** on the *sharpest probability signal in sports* (live consensus odds), with the betting stripped out — a unit no casual fan app shows because it is locked in sportsbooks. See [Competitive Audit](#what-makes-this-genuinely-different-competitive-audit). Not a repackaged feed; a new fan unit. |
 | **Commercial & Monetization Path** | Clear freemium + creator-tools + B2B white-label ladder (see [Monetization](#monetization-path)). Story-card export and a media/club second-screen are real, sellable products. |
 | **Completeness & Execution** | Deliberately small scope: one polished match view + one shareable artifact + Solana sign-up + replay mode. End-to-end and demo-ready, not a sprawling half-built platform. |
 
@@ -116,16 +141,29 @@ The "aha" moment is step 4: the fan *sees* momentum for the first time.
 ## Key Features
 
 - **Momentum Ribbon** — a live, animated win-probability timeline driven by the
-  odds `Pct` stream, framed strictly as "match momentum / market sentiment."
+  consensus odds `Pct` stream, framed strictly as "match momentum / market
+  sentiment."
+- **Momentum Impact Score** *(the signature feature)* — every event is scored by
+  **how much it moved the market's belief** (Win-Probability-Added). A goal might
+  be *+38%*, a missed penalty *−12%*, a red card *−22%*. This turns a vague bar
+  into a concrete, rankable, talk-about-able number for each moment.
 - **Event Pins** — goals, yellow/red cards, penalties, VAR, substitutions and
-  corners from the scores/events stream, pinned to the exact moment on the ribbon.
+  corners from the scores/events stream, pinned to the exact moment on the ribbon,
+  each tagged with its Impact Score.
 - **AI Co-Commentator** — short, plain-language narration generated on each
   *swing moment* and key event. Explains cause → effect, never advises a bet.
+- **"The Market Knew First"** — when the consensus probability drifts *before* a
+  visible event (pressure building), we surface it: *"The market has been sensing
+  this for two minutes."* A magic, demoable moment no casual app shows.
+  *(Depends on in-play odds granularity — see Open Questions.)*
 - **Swing Detector** — server-side logic that flags meaningful probability moves
   (e.g. a jump beyond a threshold within a short window) so narration fires on
   what matters, not on noise.
-- **Story of the Match** — auto-generated, shareable recap card (image/card) with
-  the momentum arc and top moments.
+- **Story of the Match** — auto-generated, shareable recap card with the momentum
+  arc and the top moments ranked by Impact Score.
+- **Biggest Swings Leaderboard** — a tournament-wide, cross-match ranking of the
+  highest-impact moments across all 104 games. Replayable and shareable, it gives
+  the product a reason to open *between* matches, and a viral surface.
 - **Replay Mode** — replays any finished fixture from TxLINE historical/snapshot
   data, so the experience is fully demonstrable with zero live matches running.
 - **Penalty-Shootout Mode** *(stretch)* — special handling for the `PE` game
@@ -148,11 +186,20 @@ The "aha" moment is step 4: the fan *sees* momentum for the first time.
   returns the long-lived **API token**.
 - `POST /api/guest/purchase/quote` with `{ buyerPubkey, txlineAmount }` →
   returns a partially-signed transaction quote.
-- Service levels: **Level 1** (60-second delayed) and **Level 12** (real-time).
-  TxODDS is waiving commercial data fees for the hackathon window.
-- **TO VERIFY:** exact devnet activation flow and whether devnet sign-up is
-  fee-free (`/documentation/programs/devnet.md`), so we can develop without
-  mainnet spend. Requirement permits **mainnet or devnet**.
+- **Service levels (verified from `subscription-tiers.md`):** both relevant tiers
+  are **free** and scoped to *"World Cup & International Friendlies"*, and both
+  include *"Scores and **StablePrice Odds**"* (the aggregated consensus line that
+  feeds our ribbon):
+  - **Level 12 — mainnet, real-time, free.** This is the tier we demo on.
+  - **Level 1 — 60-second delayed, free** (available on **both** mainnet and
+    devnet). We develop on **devnet Level 1** (no mainnet spend), and switch to
+    **mainnet Level 12** for the live/real-time demo.
+- Billing cycles are 28 days, purchased in 4-week multiples; the World Cup tiers
+  are priced at zero. Requirement permits **mainnet or devnet**.
+- **Note:** real-time (Level 12) appears to be **mainnet-only** — devnet tops out
+  at the 60-second-delayed Level 1. Plan the real-time demo on mainnet
+  accordingly. **TO VERIFY:** exact on-chain activation steps for the free World
+  Cup tiers and whether any nominal SOL/gas is involved.
 
 All requests after activation send:
 `Authorization: Bearer {jwt}` **and** `X-Api-Token: {apiToken}`.
@@ -164,8 +211,11 @@ All requests after activation send:
   `Ts`, `StartTime`, `Competition`, `CompetitionId`, `FixtureGroupId`,
   `Participant1Id`, `Participant1`, `Participant2Id`, `Participant2`,
   `FixtureId`, `Participant1IsHome`.
-- **TO VERIFY:** the exact `competitionId` value for the World Cup, to filter the
-  fixture list to the 104 tournament games.
+- **Mostly self-scoping:** the free Level 1/12 subscriptions only carry *"World
+  Cup & International Friendlies,"* so the feed is already narrow — heavy
+  filtering is unnecessary. **TO VERIFY:** the exact World Cup `competitionId`
+  (published in the soccer coverage CSV, not inline in the docs) to separate the
+  104 World Cup games from international friendlies in the list.
 
 ### Live scores & events (primary stream)
 
@@ -424,9 +474,13 @@ These are **not assumed** in code until confirmed against the TxLINE docs/API
 (`llms.txt`, `api-reference/openapi.json`, `docs/docs.yaml`) or the support
 Discord/Telegram:
 
-1. **World Cup `competitionId`** — exact value to filter `/api/fixtures/snapshot`.
-2. **Odds market mapping** — exact `PriceNames` labels for the 1X2 / match-result
-   market, and which line to read for "win probability."
+1. **World Cup `competitionId`** — exact value (from the soccer coverage CSV) to
+   split World Cup games from international friendlies in `/api/fixtures/snapshot`.
+2. **Odds market mapping** *(highest-priority risk)* — exact `PriceNames` labels
+   for the 1X2 / match-result market, which line to read for "win probability,"
+   and confirmation that **in-play (`InRunning: true`) odds update frequently
+   enough during a match** to drive a live ribbon. The whole product rests on
+   this; probe it before building UI.
 3. **Consensus vs per-bookmaker** — does `SuperOddsType` already give a single
    consensus line, or do we aggregate across `Bookmaker` records?
 4. **`Prices` field** — its integer scale/encoding and relationship to `Pct`.
