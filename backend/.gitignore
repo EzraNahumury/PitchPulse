@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.cache/
+# never commit wallet secrets
+wallet-devnet.json
+*.keypair.json
