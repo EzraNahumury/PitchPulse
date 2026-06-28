@@ -179,13 +179,25 @@ The "aha" moment is step 4: the fan *sees* momentum for the first time.
 
 ### Authentication & sign-up (Solana)
 
-- `POST /auth/guest/start` → returns a guest session **JWT**.
-- On-chain subscription activation via the TxLINE Solana program (Anchor;
-  references `token_treasury_v2` and `pricing_matrix` PDAs, `TOKEN_2022`), then:
-- `POST /api/token/activate` with body `{ txSig, walletSignature, leagues }` →
-  returns the long-lived **API token**.
-- `POST /api/guest/purchase/quote` with `{ buyerPubkey, txlineAmount }` →
-  returns a partially-signed transaction quote.
+**Base URLs (verified from the OpenAPI spec, v1.5.2):**
+- **Auth / activation** is served from **`https://oracle.txodds.com`**
+  (DevNet: **`https://oracle-dev.txodds.com`**) — *not* the data host.
+- **Data** (fixtures / scores / odds) is served from **`https://txline.txodds.com`**.
+
+**Full sign-up flow (verified, 11 steps condensed):**
+1. `POST https://oracle.txodds.com/auth/guest/start` → anonymous **JWT** with
+   guest claims. *(JWT expires after 30 days; on HTTP 401, re-acquire.)*
+2. Build + sign + confirm a Solana **`subscribe`** instruction with the duration
+   in weeks (multiple of 4) and the chosen service level. The wallet is the fee
+   payer. **For the free World Cup tier the contract charges 0 TxLINE.**
+3. Record the confirmed transaction signature (`txSig`).
+4. Construct a strict message binding `txSig` + comma-separated selected leagues
+   + the JWT, sign it with the wallet secret key (detached signature), Base64-encode.
+5. `POST https://oracle.txodds.com/api/token/activate` with `{ txSig,
+   walletSignature (base64), leagues[] }` and the JWT → long-lived **API token**.
+- Paid tiers only: `POST /api/guest/purchase/quote` with `{ buyerPubkey,
+  txlineAmount }` returns a partially-signed purchase tx. **Skipped for the free
+  World Cup tier** (token economics: 1 USDT = 1,000 TxLINE).
 - **Service levels (verified from `subscription-tiers.md`):** both relevant tiers
   are **free** and scoped to *"World Cup & International Friendlies"*, and both
   include *"Scores and **StablePrice Odds**"* (the aggregated consensus line that
@@ -197,9 +209,14 @@ The "aha" moment is step 4: the fan *sees* momentum for the first time.
 - Billing cycles are 28 days, purchased in 4-week multiples; the World Cup tiers
   are priced at zero. Requirement permits **mainnet or devnet**.
 - **Note:** real-time (Level 12) appears to be **mainnet-only** — devnet tops out
-  at the 60-second-delayed Level 1. Plan the real-time demo on mainnet
-  accordingly. **TO VERIFY:** exact on-chain activation steps for the free World
-  Cup tiers and whether any nominal SOL/gas is involved.
+  at the 60-second-delayed Level 1. Plan the real-time demo on mainnet.
+- **Sampling cadence:** the spec overview describes the free World Cup feed as
+  *"real-time sampled every 60 seconds."* A ~60s odds cadence is perfectly
+  adequate for the Momentum Ribbon and Impact Scores; it only weakens the
+  fine-grained "Market Knew First" pre-event drift detection, which is why that
+  feature is positioned as a nice-to-have, not core.
+- The wallet acts as transaction **fee payer** even on the free tier (nominal
+  SOL gas), and the contract charges **0 TxLINE** for the World Cup subscription.
 
 All requests after activation send:
 `Authorization: Bearer {jwt}` **and** `X-Api-Token: {apiToken}`.
@@ -251,12 +268,23 @@ All requests after activation send:
   `MarketPeriod`, `PriceNames` (e.g. outcome labels), `Prices` (int),
   **`Pct`** (implied probability as a string, *"strictly formatted to 3 decimal
   places, or NA for quarter-handicap lines"*).
-- We render the **`Pct`** value directly as the momentum percentage — no raw
-  odds and no betting language reach the fan.
-- **TO VERIFY:** (a) the exact `PriceNames` labels for the 1X2 / match-result
-  market so we map home/draw/away correctly; (b) whether `SuperOddsType` already
-  provides a single consensus line, or whether we aggregate across `Bookmaker`
-  records ourselves; (c) the meaning/scale of the integer `Prices` field.
+- **The signal is even better than "odds."** The spec states the feed includes
+  the **`Stable Price`** — *"demargined prices and **percentages**, currently for
+  key markets in European football (soccer)."* "Demargined" means the bookmaker
+  margin (the vig) has been removed, so the percentage is a **fair probability**,
+  not a marked-up price. That is *exactly* a clean win-probability — we render
+  **`Pct`** directly as the momentum %, with no raw odds and no betting language
+  reaching the fan.
+- **Consensus is provided, not computed by us.** `Stable Price` is already an
+  aggregated/demargined line (carried via `SuperOddsType`), so we do **not** need
+  to average across individual `Bookmaker` records. This removes a whole class of
+  modelling risk.
+- **TO VERIFY (now low-risk, one probe call):** the exact `PriceNames` string
+  labels for the match-result market (to map home/draw/away) and the literal
+  `SuperOddsType` value for the Stable Price line. Not enumerated in the spec —
+  resolved instantly by inspecting one real `GET /api/odds/updates/{fixtureId}`
+  response. The integer `Prices` are the raw price representation; we use `Pct`
+  and can ignore `Prices` scaling for the ribbon.
 
 ### Historical replay (demo enablement)
 
@@ -470,33 +498,40 @@ PitchPulse is built to be safe for a mainstream, general audience.
 
 ## Open Questions / To Verify
 
-These are **not assumed** in code until confirmed against the TxLINE docs/API
-(`llms.txt`, `api-reference/openapi.json`, `docs/docs.yaml`) or the support
-Discord/Telegram:
+Verified against the live OpenAPI spec (`https://txline.txodds.com/docs/docs.yaml`,
+v1.5.2) and the docs index (`llms.txt`). *(Note: the `api-reference/openapi.json`
+URL currently serves a placeholder "Plant Store" sample — use `docs.yaml`.)*
 
-1. **World Cup `competitionId`** — exact value (from the soccer coverage CSV) to
-   split World Cup games from international friendlies in `/api/fixtures/snapshot`.
-2. **Odds market mapping** *(highest-priority risk)* — exact `PriceNames` labels
-   for the 1X2 / match-result market, which line to read for "win probability,"
-   and confirmation that **in-play (`InRunning: true`) odds update frequently
-   enough during a match** to drive a live ribbon. The whole product rests on
-   this; probe it before building UI.
-3. **Consensus vs per-bookmaker** — does `SuperOddsType` already give a single
-   consensus line, or do we aggregate across `Bookmaker` records?
-4. **`Prices` field** — its integer scale/encoding and relationship to `Pct`.
-5. **`action` enumeration** — the full set of values of the scores `action` field
-   and the exact `dataSoccer` value conventions (e.g. how a substitution vs a
-   goal is signalled).
-6. **Field casing** — confirm camelCase (scores) vs PascalCase (odds) against the
-   OpenAPI spec.
-7. **Historical replay endpoints** — exact paths + parameters for the 5-minute
-   interval and full-sequence score/odds endpoints powering Replay Mode.
-8. **Devnet sign-up** — exact devnet activation flow and whether it is fee-free
-   for development.
-9. **SSE payload framing** — exact `id` / `event` / `data` line format and
-   heartbeat cadence for robust client parsing and resume.
-10. **Merkle proofs (stretch)** — endpoint paths and the on-chain verification
-    flow for a "verified on Solana" badge.
+**Resolved during this audit:**
+
+- ✅ **Auth base URLs** — `oracle.txodds.com` (mainnet) / `oracle-dev.txodds.com`
+  (devnet) for guest-start + activate; `txline.txodds.com` for data.
+- ✅ **Full Solana sign-up flow** — 11-step guest-JWT → `subscribe` (0 TxLINE on
+  free tier) → activate → API token, documented above.
+- ✅ **Consensus line** — `Stable Price` is pre-aggregated + **demargined**;
+  `Pct` is a fair probability %. No client-side bookmaker averaging needed.
+- ✅ **`Prices` for the ribbon** — not needed; we use `Pct`.
+- ✅ **SSE event shape** — `OddsStreamEvent`/scores stream emit `{ id, event,
+  data }` with `data` = the payload object, plus `heartbeat` events.
+
+**Still genuinely open (verify by one authenticated probe call):**
+
+1. **`PriceNames` labels** *(only remaining build-blocker, now trivial)* — the
+   literal strings for the match-result market and the literal `SuperOddsType`
+   value for the Stable Price line. Resolve by inspecting one real
+   `GET /api/odds/updates/{fixtureId}` response.
+2. **In-play update density** — confirm the ~60s-sampled free feed gives enough
+   odds ticks across a match for a lively ribbon (expected: yes).
+3. **World Cup `competitionId`** — exact value from the soccer coverage CSV, to
+   split the 104 World Cup games from international friendlies.
+4. **`action` enumeration** — the value set of the scores `action` field and the
+   `dataSoccer` conventions (how a substitution vs a goal is signalled).
+5. **Field casing** — confirm camelCase (scores) vs PascalCase (odds) end to end.
+6. **Historical replay endpoints** — the odds historical-interval path is keyed by
+   `epochDay` / `hourOfDay` / `interval` (+ `fixtureId`); confirm the exact score
+   equivalents and full-sequence paths for Replay Mode.
+7. **Merkle proofs (stretch)** — endpoint paths + on-chain verify flow for a
+   "verified on Solana" badge.
 
 ---
 
