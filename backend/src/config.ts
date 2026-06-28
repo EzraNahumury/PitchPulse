@@ -12,4 +12,9 @@ export const config = {
   walletPath: process.env.WALLET_PATH || "../spike/wallet-devnet.json",
   worldCupCompetitionId: Number(process.env.WORLD_CUP_COMPETITION_ID || 72),
   cacheDir: path.resolve(__dirname, "../.cache"),
+  // AI co-commentator via Ollama Cloud. Without host+key the backend falls back
+  // to a deterministic line.
+  ollamaHost: (process.env.OLLAMA_HOST || "").replace(/\/$/, ""),
+  ollamaKey: process.env.OLLAMA_KEY || "",
+  ollamaModel: process.env.OLLAMA_MODEL || "gpt-oss:120b-cloud",
 };

@@ -6,12 +6,34 @@ import { loadStaticState, loadSnapshots } from "./match";
 import { MomentumEngine } from "./engine/momentum";
 import { replay } from "./replay/replayer";
 import { startLiveEngine } from "./live";
+import { narrateEvent, NarrationInput } from "./ai/narrate";
 
 export async function buildServer() {
   const app = Fastify({ logger: false });
   await app.register(cors, { origin: true });
 
   app.get("/api/health", async () => ({ ok: true, txlineBase: config.txlineBase }));
+
+  // AI co-commentator: one event -> one plain-language sentence.
+  app.post("/api/narrate", async (req, reply) => {
+    const b = (req.body || {}) as Partial<NarrationInput>;
+    if (!b.action || !b.home || !b.away) {
+      return reply.code(400).send({ error: "action, home, away required" });
+    }
+    const input: NarrationInput = {
+      action: String(b.action),
+      side: b.side === "home" || b.side === "away" ? b.side : "neutral",
+      home: String(b.home),
+      away: String(b.away),
+      scoreHome: Number(b.scoreHome) || 0,
+      scoreAway: Number(b.scoreAway) || 0,
+      impact: Number(b.impact) || 0,
+      pHome: b.pHome != null ? Number(b.pHome) : undefined,
+      pAway: b.pAway != null ? Number(b.pAway) : undefined,
+      clock: b.clock != null ? Number(b.clock) : null,
+    };
+    return narrateEvent(input);
+  });
 
   // Fixture list. ?worldCup=1 filters to the World Cup competition.
   app.get("/api/fixtures", async (req) => {
@@ -29,21 +51,24 @@ export async function buildServer() {
   });
 
   // Full static match state (ribbon + events + impact scores + top moments).
+  // ?source=demo swaps in synthesized moving odds.
   app.get("/api/match/:id", async (req, reply) => {
     const id = Number((req.params as any).id);
     if (!Number.isFinite(id)) return reply.code(400).send({ error: "bad fixtureId" });
+    const source = (req.query as any)?.source === "demo" ? "demo" : "real";
     try {
-      return await loadStaticState(id);
+      return await loadStaticState(id, source);
     } catch (e: any) {
       return reply.code(502).send({ error: String(e.message || e) });
     }
   });
 
-  // SSE stream. mode=replay (default) or mode=live.
+  // SSE stream. mode=replay (real flat odds), mode=demo (synthesized moving
+  // odds), or mode=live (upstream feed).
   app.get("/api/match/:id/stream", async (req, reply) => {
     const id = Number((req.params as any).id);
     const q = req.query as any;
-    const mode = q.mode === "live" ? "live" : "replay";
+    const mode = q.mode === "live" ? "live" : q.mode === "demo" ? "demo" : "replay";
     const stepMs = Number(q.stepMs) || 200;
     if (!Number.isFinite(id)) return reply.code(400).send({ error: "bad fixtureId" });
 
@@ -60,8 +85,8 @@ export async function buildServer() {
 
     let cleanup = () => {};
     try {
-      if (mode === "replay") {
-        const { meta, odds, scores } = await loadSnapshots(id);
+      if (mode === "replay" || mode === "demo") {
+        const { meta, odds, scores } = await loadSnapshots(id, mode === "demo" ? "demo" : "real");
         const engine = new MomentumEngine(meta);
         engine.on("momentum", (p) => send("momentum", p));
         engine.on("event", (e) => send("event", e));

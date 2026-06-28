@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/*
+  PitchPulse — "Broadcast at Night / The Tug-of-War"
+  Deep floodlit-pitch base, two competing team poles (warm home, cool away),
+  amber for the draw. Boldness lives in the Momentum Ribbon; everything else
+  stays quiet: slate surfaces, chalk text, market-data mono.
+*/
+
+@theme {
+  --color-void: #0b0f0e; /* base background — floodlit pitch at night */
+  --color-panel: #141b18; /* elevated surface */
+  --color-panel-2: #18211d; /* hover / nested surface */
+  --color-line: #243430; /* hairline borders */
+  --color-chalk: #eaf2ec; /* primary text — pitch chalk */
+  --color-chalk-dim: #8aa39a; /* muted text */
+  --color-chalk-faint: #5b6f68; /* captions / axis */
+
+  --color-home: #ff5c38; /* home pole — warm */
+  --color-away: #38bdf8; /* away pole — cool */
+  --color-draw: #f4c04e; /* draw / neutral tension */
+  --color-live: #38e08a; /* live / positive */
+
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-data);
+  --font-display: var(--font-display-face);
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+}
+
+@layer base {
+  html {
+    background: var(--color-void);
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-void);
+    color: var(--color-chalk);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-away) 35%, transparent);
+    color: var(--color-chalk);
+  }
+
+  /* Broadcast display: condensed, jersey-like, tight. */
+  .font-display {
+    font-family: var(--font-display), "Arial Narrow", sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  /* Eyebrow / label treatment used throughout. */
+  .eyebrow {
+    font-family: var(--font-mono), monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.68rem;
+    color: var(--color-chalk-faint);
+  }
+
+  /* Tabular figures for all live data. */
+  .tnum {
+    font-family: var(--font-mono), monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+/* Subtle floodlit vignette + chalk-line texture for the page backdrop. */
+.pitch-bg {
+  background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--color-away) 9%, transparent), transparent 60%),
+    radial-gradient(90% 60% at 50% 120%, color-mix(in oklab, var(--color-home) 7%, transparent), transparent 55%),
+    var(--color-void);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+.live-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes sheen {
+  0% { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-panel) 0%,
+    var(--color-panel-2) 50%,
+    var(--color-panel) 100%
+  );
+  background-size: 200% 100%;
+  animation: sheen 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Re-skin the wallet-adapter button to the PitchPulse palette. */
+.wallet-adapter-button {
+  background: var(--color-panel) !important;
+  color: var(--color-chalk) !important;
+  border: 1px solid var(--color-line) !important;
+  border-radius: var(--radius-sm) !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  font-family: var(--font-body), sans-serif !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+}
+.wallet-adapter-button:not([disabled]):hover {
+  background: var(--color-panel-2) !important;
+}
+.wallet-adapter-button-trigger {
+  background: var(--color-away) !important;
+  color: var(--color-void) !important;
+  border-color: transparent !important;
+}
+.wallet-adapter-button-start-icon {
+  margin-right: 6px !important;
+}
+.wallet-adapter-modal-wrapper {
+  background: var(--color-panel) !important;
+}
+.wallet-adapter-modal-title {
+  color: var(--color-chalk) !important;
+  font-family: var(--font-display), sans-serif !important;
+}
