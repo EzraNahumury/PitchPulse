@@ -1,0 +1,7 @@
+node_modules/
+dist/
+out/
+.env
+# Never commit a keypair secret
+wallet-devnet.json
+*.keypair.json

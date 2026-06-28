@@ -179,10 +179,11 @@ The "aha" moment is step 4: the fan *sees* momentum for the first time.
 
 ### Authentication & sign-up (Solana)
 
-**Base URLs (verified from the OpenAPI spec, v1.5.2):**
-- **Auth / activation** is served from **`https://oracle.txodds.com`**
-  (DevNet: **`https://oracle-dev.txodds.com`**) — *not* the data host.
-- **Data** (fixtures / scores / odds) is served from **`https://txline.txodds.com`**.
+**Base URLs (verified live in the Phase 0 spike):**
+- **Mainnet:** `https://txline.txodds.com` serves **both** auth and data.
+- **Devnet:** `https://txline-dev.txodds.com` serves both. *(The `oracle.txodds.com`
+  / `oracle-dev.txodds.com` hosts in the older example code no longer resolve —
+  use the `txline` hosts.)*
 
 **Full sign-up flow (verified, 11 steps condensed):**
 1. `POST https://oracle.txodds.com/auth/guest/start` → anonymous **JWT** with
@@ -302,6 +303,54 @@ All requests after activation send:
   an on-chain validation example. A "verified on Solana ✓" badge on a Story card
   is a possible stretch differentiator. **TO VERIFY:** proof endpoint paths and
   verification flow (`documentation/examples/onchain-validation.md`).
+
+---
+
+## Verified Live — Phase 0 Data Spike ✅
+
+The full pipe has been **proven end to end on devnet** (see `/spike`). A throwaway
+wallet ran: guest JWT → on-chain `subscribe` → activate → real World Cup data.
+This resolved every previously-open field question with **real payload values**:
+
+**On-chain / auth (devnet):**
+- Devnet program: `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`; TxL mint
+  `4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG` (Token-2022). *(Mainnet program
+  `9Exb…`, mint `Zhw9…` — the IDL ships mainnet; override per cluster.)*
+- `subscribe(serviceLevelId=1, weeks)` — **`weeks` must be a multiple of 4**
+  (on-chain error `InvalidWeeks` otherwise). Free tier charged **0 TxLINE**.
+- Message binding `` `${txSig}:${leagues}:${jwt}` `` → NaCl detached → base64;
+  activation returns an API token shaped `txoracle_api_…`.
+
+**Fixtures:** `GET /api/fixtures/snapshot` returned live competitions
+`["World Cup", "Friendlies"]`. **World Cup `CompetitionId = 72`, `SportId = 1`.**
+
+**Odds — the ribbon signal (resolved):**
+- Markets seen via `SuperOddsType`: **`1X2_PARTICIPANT_RESULT`** (match result),
+  `OVERUNDER_PARTICIPANT_GOALS`, `ASIANHANDICAP_PARTICIPANT_GOALS`.
+- The match-result market uses `PriceNames = ["part1","draw","part2"]`
+  (home / draw / away via `Participant1IsHome`), with `MarketPeriod = null` for
+  full-time and `"half=1"` for first half.
+- **`Pct` is the demargined fair probability** and the three values sum to ~100%
+  (e.g. `["5.556","11.624","82.850"]`). We render this directly as the Momentum
+  Ribbon. `Prices` are decimal odds ×1000 (e.g. `1207` = 1.207) — not needed.
+
+**Scores / events (resolved, PascalCase):**
+- Each row carries `Action`, `StatusId` (match phase; `4` = 2nd-half in play),
+  `Clock {Running, Seconds}`, `Score` (per-participant per-phase `Goals` /
+  `YellowCards` / `Corners`), `Data` (event detail, e.g. `substitution` →
+  `PlayerInId` / `PlayerOutId`), and `Stats` (period-keyed stat map).
+- **`Action` enumeration (verified):** `goal`, `yellow_card`, `penalty`,
+  `penalty_outcome`, `var`, `var_end`, `substitution`, `corner`, `shot`,
+  `free_kick`, `kickoff`, `additional_time`, `injury`, `halftime_finalised`,
+  `game_finalised`, `lineups`, plus **possession-danger states**
+  (`attack_possession`, `danger_possession`, `high_danger_possession`,
+  `safe_possession`) — a *pitch-pressure* signal we can fuse with odds drift.
+
+**Bonus capability unlocked:** the possession-danger + `shot` + `corner` events
+give a second, on-pitch momentum signal independent of the market. Triangulating
+*market drift* (odds `Pct`) against *pitch pressure* (possession danger) is what
+powers the AI co-commentator and the "Market Knew First" moment — and it is hard
+to reproduce without TxLINE's combined feed.
 
 ---
 
@@ -514,23 +563,27 @@ URL currently serves a placeholder "Plant Store" sample — use `docs.yaml`.)*
 - ✅ **SSE event shape** — `OddsStreamEvent`/scores stream emit `{ id, event,
   data }` with `data` = the payload object, plus `heartbeat` events.
 
-**Still genuinely open (verify by one authenticated probe call):**
+**Also resolved by the Phase 0 spike (real payloads):**
 
-1. **`PriceNames` labels** *(only remaining build-blocker, now trivial)* — the
-   literal strings for the match-result market and the literal `SuperOddsType`
-   value for the Stable Price line. Resolve by inspecting one real
-   `GET /api/odds/updates/{fixtureId}` response.
-2. **In-play update density** — confirm the ~60s-sampled free feed gives enough
-   odds ticks across a match for a lively ribbon (expected: yes).
-3. **World Cup `competitionId`** — exact value from the soccer coverage CSV, to
-   split the 104 World Cup games from international friendlies.
-4. **`action` enumeration** — the value set of the scores `action` field and the
-   `dataSoccer` conventions (how a substitution vs a goal is signalled).
-5. **Field casing** — confirm camelCase (scores) vs PascalCase (odds) end to end.
-6. **Historical replay endpoints** — the odds historical-interval path is keyed by
+- ✅ **Match-result market** — `SuperOddsType = 1X2_PARTICIPANT_RESULT`,
+  `PriceNames = ["part1","draw","part2"]`, `Pct` = demargined fair %.
+- ✅ **World Cup `CompetitionId = 72`** (live from `/api/fixtures/snapshot`).
+- ✅ **`Action` enumeration** and the `Score` / `Data` / `Stats` / `Clock` /
+  `StatusId` event schema (PascalCase) — documented above.
+- ✅ **Live hosts** — `txline.txodds.com` / `txline-dev.txodds.com`.
+
+**Still genuinely open:**
+
+1. **In-play (`InRunning: true`) odds density during a real live match** — the
+   spiked fixture was pre-match (`InRunning: false`). Confirm the tick rate once a
+   World Cup match is actually in play. *(Expected fine; the ribbon only needs a
+   tick every several seconds.)*
+2. **Historical replay endpoints** — the odds historical-interval path is keyed by
    `epochDay` / `hourOfDay` / `interval` (+ `fixtureId`); confirm the exact score
    equivalents and full-sequence paths for Replay Mode.
-7. **Merkle proofs (stretch)** — endpoint paths + on-chain verify flow for a
+3. **Red-card signalling** — `yellow_card` is confirmed; verify the exact `Action`
+   value for a red/second-yellow (likely `red_card`) on a live match.
+4. **Merkle proofs (stretch)** — endpoint paths + on-chain verify flow for a
    "verified on Solana" badge.
 
 ---
