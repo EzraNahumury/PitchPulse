@@ -45,6 +45,23 @@ export function fetchMatch(
   return getJSON<MatchState>(`/api/match/${fixtureId}`, signal);
 }
 
+export type MatchStatus = "upcoming" | "live" | "finished";
+
+/** Real per-fixture status from the score feed, keyed by fixtureId. */
+export async function fetchFixtureStatuses(
+  ids: number[],
+  signal?: AbortSignal,
+): Promise<Record<number, MatchStatus>> {
+  if (ids.length === 0) return {};
+  const raw = await getJSON<Record<string, MatchStatus>>(
+    `/api/fixtures/status?ids=${ids.join(",")}`,
+    signal,
+  );
+  const out: Record<number, MatchStatus> = {};
+  for (const [k, v] of Object.entries(raw)) out[Number(k)] = v;
+  return out;
+}
+
 export function streamUrl(
   fixtureId: number,
   mode: StreamMode,

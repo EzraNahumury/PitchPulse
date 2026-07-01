@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { config } from "./config";
 import { getFixtures } from "./txline/client";
-import { loadStaticState, loadSnapshots } from "./match";
+import { loadStaticState, loadSnapshots, fixtureStatus } from "./match";
 import { MomentumEngine } from "./engine/momentum";
 import { replay } from "./replay/replayer";
 import { startLiveEngine } from "./live";
@@ -48,6 +48,21 @@ export async function buildServer() {
       home: f.Participant1IsHome ? f.Participant1 : f.Participant2,
       away: f.Participant1IsHome ? f.Participant2 : f.Participant1,
     }));
+  });
+
+  // Real per-fixture status (upcoming | live | finished), derived from the score
+  // feed. ?ids=1,2,3 (comma-separated); returns { "1": "live", ... }. Cached.
+  app.get("/api/fixtures/status", async (req) => {
+    const raw = String((req.query as any)?.ids || "");
+    const ids = raw
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n))
+      .slice(0, 60);
+    const entries = await Promise.all(
+      ids.map(async (id) => [id, await fixtureStatus(id)] as const),
+    );
+    return Object.fromEntries(entries);
   });
 
   // Full static match state (ribbon + events + impact scores + top moments).

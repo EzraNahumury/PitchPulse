@@ -4,6 +4,37 @@ import { buildTimeline } from "./engine/momentum";
 import { synthesizeOdds } from "./replay/synthOdds";
 import { MatchMeta, MatchState } from "./engine/types";
 
+export type MatchStatus = "upcoming" | "live" | "finished";
+
+// Real status per fixture, cached briefly so a fixtures-list refresh doesn't
+// re-fetch every match's scores. Derived from the score feed's Action markers:
+// game_finalised = definitively over; kickoff without it = in play; neither =
+// not started. (StatusId enum is unreliable on devnet, so we don't rely on it.)
+const STATUS_TTL_MS = 30_000;
+const statusCache = new Map<number, { status: MatchStatus; ts: number }>();
+
+export async function fixtureStatus(fixtureId: number): Promise<MatchStatus> {
+  const cached = statusCache.get(fixtureId);
+  if (cached && Date.now() - cached.ts < STATUS_TTL_MS) return cached.status;
+
+  let status: MatchStatus = "upcoming";
+  try {
+    const scores = await getScores(fixtureId);
+    let started = false;
+    let finished = false;
+    for (const r of scores) {
+      const a = (r as any)?.Action;
+      if (a === "game_finalised") finished = true;
+      else if (a === "kickoff") started = true;
+    }
+    status = finished ? "finished" : started ? "live" : "upcoming";
+  } catch {
+    // leave as upcoming if scores are unavailable
+  }
+  statusCache.set(fixtureId, { status, ts: Date.now() });
+  return status;
+}
+
 function fallbackMeta(fixtureId: number): MatchMeta {
   return {
     fixtureId,
