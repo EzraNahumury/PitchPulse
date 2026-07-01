@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useMounted } from "@/lib/useMounted";
+import WalletAvatar from "./WalletAvatar";
+import AccountModal from "./AccountModal";
 
 const SIGN_MESSAGE =
   "Sign in to PitchPulse. This proves wallet ownership for sign-up. No funds move. Momentum and sentiment, not betting.";
@@ -22,8 +24,10 @@ export default function WalletStatus() {
   const [override, setOverride] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [rejected, setRejected] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const pk = connected && publicKey ? publicKey.toBase58() : null;
+  const short = pk ? `${pk.slice(0, 4)}…${pk.slice(-4)}` : "";
   const signed =
     mounted && pk
       ? (override[pk] ?? localStorage.getItem(sessionKey(pk)) === "1")
@@ -65,12 +69,28 @@ export default function WalletStatus() {
         </button>
       ) : null}
       {connected && signed ? (
-        <span className="inline-flex items-center gap-1.5 rounded-sm border border-live/40 px-2.5 py-1.5 text-xs text-live">
+        <span className="hidden items-center gap-1.5 rounded-full border border-live/40 px-2.5 py-1.5 text-xs text-live sm:inline-flex">
           <span className="h-1.5 w-1.5 rounded-full bg-live" />
           Signed in
         </span>
       ) : null}
-      <WalletMultiButton />
+
+      {pk ? (
+        <button
+          onClick={() => setAccountOpen(true)}
+          className="inline-flex items-center gap-2 rounded-full border border-line bg-panel px-2.5 py-1.5 text-sm font-semibold text-chalk transition-colors hover:bg-panel-2"
+        >
+          <WalletAvatar pubkey={pk} size={22} />
+          <span className="tnum">{short}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-chalk-faint">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <WalletMultiButton />
+      )}
+
+      {accountOpen ? <AccountModal onClose={() => setAccountOpen(false)} /> : null}
     </div>
   );
 }

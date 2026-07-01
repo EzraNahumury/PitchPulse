@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 /*
-  PitchPulse — "Broadcast at Night / The Tug-of-War"
-  Deep floodlit-pitch base, two competing team poles (warm home, cool away),
-  amber for the draw. Boldness lives in the Momentum Ribbon; everything else
-  stays quiet: slate surfaces, chalk text, market-data mono.
+  PitchPulse — "Clean Daylight / The Tug-of-War"
+  Bright editorial base to match the landing page. Two competing team poles
+  (warm home, cool away), amber for the draw. Boldness lives in the Momentum
+  Ribbon; everything else stays quiet: white surfaces, ink text, mono data.
 */
 
 @theme {
-  --color-void: #0b0f0e; /* base background — floodlit pitch at night */
-  --color-panel: #141b18; /* elevated surface */
-  --color-panel-2: #18211d; /* hover / nested surface */
-  --color-line: #243430; /* hairline borders */
-  --color-chalk: #eaf2ec; /* primary text — pitch chalk */
-  --color-chalk-dim: #8aa39a; /* muted text */
-  --color-chalk-faint: #5b6f68; /* captions / axis */
+  --color-void: #ffffff; /* base background — clean white */
+  --color-panel: #fafbfb; /* elevated surface */
+  --color-panel-2: #f1f4f3; /* hover / nested surface */
+  --color-line: #e6eae8; /* hairline borders */
+  --color-chalk: #0e1512; /* primary text — ink */
+  --color-chalk-dim: #55625d; /* muted text */
+  --color-chalk-faint: #97a19c; /* captions / axis */
 
   --color-home: #ff5c38; /* home pole — warm */
-  --color-away: #38bdf8; /* away pole — cool */
-  --color-draw: #f4c04e; /* draw / neutral tension */
-  --color-live: #38e08a; /* live / positive */
+  --color-away: #0ea5d9; /* away pole — cool (deepened for white bg) */
+  --color-draw: #e0a52e; /* draw / neutral tension (deepened for white bg) */
+  --color-live: #17b877; /* live / positive (deepened for white bg) */
 
   --font-sans: var(--font-body);
   --font-mono: var(--font-data);
@@ -34,7 +34,7 @@
 @layer base {
   html {
     background: var(--color-void);
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
@@ -45,7 +45,7 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-away) 35%, transparent);
+    background: color-mix(in oklab, var(--color-away) 22%, transparent);
     color: var(--color-chalk);
   }
 
@@ -103,8 +103,8 @@
 /* Subtle floodlit vignette + chalk-line texture for the page backdrop. */
 .pitch-bg {
   background:
-    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--color-away) 9%, transparent), transparent 60%),
-    radial-gradient(90% 60% at 50% 120%, color-mix(in oklab, var(--color-home) 7%, transparent), transparent 55%),
+    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--color-away) 5%, transparent), transparent 60%),
+    radial-gradient(90% 60% at 50% 120%, color-mix(in oklab, var(--color-home) 4%, transparent), transparent 55%),
     var(--color-void);
 }
 
