@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import WalletAvatar from "./WalletAvatar";
+import WalletIcon from "./WalletIcon";
 
 /**
  * RainbowKit-style account card: avatar, address, SOL balance, and Copy /
@@ -92,7 +92,13 @@ export default function AccountModal({ onClose }: { onClose: () => void }) {
 
         {/* identity */}
         <div className="flex flex-col items-center">
-          <WalletAvatar pubkey={pk} size={64} />
+          <WalletIcon
+            icon={wallet?.adapter.icon}
+            name={wallet?.adapter.name}
+            pubkey={pk}
+            size={64}
+            className="rounded-2xl"
+          />
           <div className="mt-4 head text-xl text-neutral-900">{short}</div>
           <div className="tnum mt-1 text-sm text-neutral-400">
             {balance == null ? "— SOL" : `${balance.toFixed(3)} SOL`}

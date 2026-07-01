@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useMounted } from "@/lib/useMounted";
-import WalletAvatar from "./WalletAvatar";
+import WalletIcon from "./WalletIcon";
 import AccountModal from "./AccountModal";
 
 const SIGN_MESSAGE =
@@ -19,7 +19,7 @@ const sessionKey = (pubkey: string) => `pp_signed_${pubkey}`;
  */
 export default function WalletStatus() {
   const mounted = useMounted();
-  const { publicKey, signMessage, connected } = useWallet();
+  const { publicKey, signMessage, connected, wallet } = useWallet();
   // event-driven overrides so we never sync state inside an effect
   const [override, setOverride] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
@@ -80,7 +80,12 @@ export default function WalletStatus() {
           onClick={() => setAccountOpen(true)}
           className="inline-flex items-center gap-2 rounded-full border border-line bg-panel px-2.5 py-1.5 text-sm font-semibold text-chalk transition-colors hover:bg-panel-2"
         >
-          <WalletAvatar pubkey={pk} size={22} />
+          <WalletIcon
+            icon={wallet?.adapter.icon}
+            name={wallet?.adapter.name}
+            pubkey={pk}
+            size={22}
+          />
           <span className="tnum">{short}</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-chalk-faint">
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

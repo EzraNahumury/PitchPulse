@@ -338,9 +338,12 @@ export default function Landing() {
       {/* ───────────────────────── FOOTER ───────────────────────── */}
       <footer className="bg-white">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-5 py-9 text-center sm:flex-row sm:px-8 sm:text-left">
-          <span className="head text-lg tracking-tight">
-            <span className="text-neutral-900">Pitch</span>
-            <span className="text-home">Pulse</span>
+          <span className="inline-flex items-center gap-2">
+            <Image src="/logo.png" alt="PitchPulse" width={24} height={24} style={{ width: 24, height: "auto" }} />
+            <span className="head text-lg tracking-tight">
+              <span className="text-neutral-900">Pitch</span>
+              <span className="text-home">Pulse</span>
+            </span>
           </span>
           <p className="text-xs text-neutral-400">
             Built on TxLINE live data · sign-up via Solana · entertainment &amp;

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 const LINKS = [
@@ -13,15 +14,14 @@ const LINKS = [
 function LandingMark() {
   return (
     <a href="#home" className="inline-flex items-center gap-2.5">
-      <span className="relative inline-block h-5 w-5" aria-hidden>
-        <span
-          className="absolute inset-x-0 bottom-0 h-full rounded-[2px] bg-home"
-          style={{
-            clipPath:
-              "polygon(0 60%,30% 60%,45% 20%,60% 80%,72% 45%,100% 45%,100% 100%,0 100%)",
-          }}
-        />
-      </span>
+      <Image
+        src="/logo.png"
+        alt="PitchPulse"
+        width={30}
+        height={30}
+        priority
+        style={{ width: 30, height: "auto" }}
+      />
       <span className="head text-[1.35rem] tracking-tight">
         <span className="text-neutral-900">Pitch</span>
         <span className="text-home">Pulse</span>
