@@ -24,6 +24,7 @@
   --font-sans: var(--font-body);
   --font-mono: var(--font-data);
   --font-display: var(--font-display-face);
+  --font-editorial: var(--font-serif);
 
   --radius-xs: 3px;
   --radius-sm: 5px;
@@ -69,6 +70,34 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
   }
+
+  /* ── Landing typography (editorial: clean grotesk + serif-italic accents) ── */
+
+  /* Big, clean sans headings on the landing. */
+  .head {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    line-height: 1.03;
+  }
+
+  /* Serif-italic accent words inside a heading (matches editorial reference). */
+  .em {
+    font-family: var(--font-editorial), Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Consistent uppercase eyebrow/kicker on the landing. */
+  .kicker {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #9aa3a0;
+  }
 }
 
 /* Subtle floodlit vignette + chalk-line texture for the page backdrop. */
@@ -102,9 +131,39 @@
   animation: sheen 1.6s ease-in-out infinite;
 }
 
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee-x 48s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.float-y {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise-in {
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .live-dot,
-  .skeleton {
+  .skeleton,
+  .marquee-track,
+  .float-y,
+  .rise-in {
     animation: none;
   }
 }
@@ -132,10 +191,105 @@
 .wallet-adapter-button-start-icon {
   margin-right: 6px !important;
 }
+/* ── Premium wallet modal (clean white, RainbowKit-class) ── */
+.wallet-adapter-modal {
+  background: rgba(15, 23, 20, 0.4) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
 .wallet-adapter-modal-wrapper {
-  background: var(--color-panel) !important;
+  background: #ffffff !important;
+  border: 1px solid #e6eae8 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 44px 100px -34px rgba(15, 23, 20, 0.45) !important;
+  max-width: 420px !important;
+  padding: 8px !important;
 }
 .wallet-adapter-modal-title {
-  color: var(--color-chalk) !important;
-  font-family: var(--font-display), sans-serif !important;
+  color: #0e1512 !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  font-size: 1.25rem !important;
+  padding: 22px 24px 8px !important;
+}
+.wallet-adapter-modal-button-close {
+  background: #f1f4f3 !important;
+  border-radius: 9999px !important;
+  top: 22px !important;
+  right: 22px !important;
+  padding: 10px !important;
+  transition: background 0.15s ease !important;
+}
+.wallet-adapter-modal-button-close:hover {
+  background: #e6eae8 !important;
+}
+.wallet-adapter-modal-button-close svg {
+  fill: #6b7d76 !important;
+}
+.wallet-adapter-modal-list {
+  margin: 6px 8px 10px !important;
+}
+/* each wallet row → rounded tile */
+.wallet-adapter-modal-list .wallet-adapter-button {
+  height: auto !important;
+  padding: 14px 16px !important;
+  margin-bottom: 6px !important;
+  border-radius: 14px !important;
+  background: #fafbfb !important;
+  border: 1px solid #eceeed !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: #0e1512 !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: rgba(255, 92, 56, 0.06) !important;
+  border-color: rgba(255, 92, 56, 0.35) !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon img {
+  width: 30px !important;
+  height: 30px !important;
+  margin-right: 12px !important;
+  border-radius: 8px !important;
+}
+/* "Detected" tag on the right */
+.wallet-adapter-modal-list .wallet-adapter-button span {
+  color: var(--color-live) !important;
+  font-weight: 600 !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+.wallet-adapter-modal-list-more {
+  color: #0e1512 !important;
+  font-family: var(--font-sans), sans-serif !important;
+}
+.wallet-adapter-modal-list-more svg {
+  fill: #0e1512 !important;
+}
+
+/* Landing-scoped: premium solid pill on the light theme (dark app keeps cyan). */
+.landing-wallet .wallet-adapter-button {
+  height: 44px !important;
+  padding: 0 20px !important;
+  border-radius: 9999px !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  background: #0e1512 !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  transition: transform 0.15s ease, background 0.15s ease !important;
+}
+.landing-wallet .wallet-adapter-button-trigger {
+  background: #0e1512 !important;
+  color: #ffffff !important;
+}
+.landing-wallet .wallet-adapter-button:not([disabled]):hover {
+  background: #1b2621 !important;
+  transform: translateY(-1px) !important;
 }

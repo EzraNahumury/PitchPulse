@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
+import { Geist, Barlow_Condensed, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import SolanaProvider from "@/components/SolanaProvider";
 
@@ -12,6 +12,14 @@ const display = Barlow_Condensed({
   variable: "--font-display-face",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+});
+
+// Editorial serif for accent words on the landing (used italic).
+const serif = Newsreader({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  style: ["italic", "normal"],
+  weight: ["400", "500", "600"],
 });
 
 const data = IBM_Plex_Mono({
@@ -32,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${body.variable} ${display.variable} ${data.variable} h-full antialiased`}
+      className={`${body.variable} ${display.variable} ${serif.variable} ${data.variable} h-full antialiased`}
     >
       <body className="pitch-bg min-h-full">
         <SolanaProvider>{children}</SolanaProvider>
