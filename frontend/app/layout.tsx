@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Barlow_Condensed, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import SolanaProvider from "@/components/SolanaProvider";
+import ExtensionErrorGuard from "@/components/ExtensionErrorGuard";
 
 const body = Geist({
   variable: "--font-body",
@@ -43,6 +44,7 @@ export default function RootLayout({
       className={`${body.variable} ${display.variable} ${serif.variable} ${data.variable} h-full antialiased`}
     >
       <body className="pitch-bg min-h-full">
+        <ExtensionErrorGuard />
         <SolanaProvider>{children}</SolanaProvider>
       </body>
     </html>
